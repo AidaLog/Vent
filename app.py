@@ -111,6 +111,7 @@ with col2:
                 transcription = client.audio.transcriptions.create(
                     file=(temp_filename, file.read()),
                     model="whisper-large-v3",
+                    prompt="This recording is a snippet of a project explanation that will be used to write project documentation.",
                     response_format="verbose_json",
                 )
             st.write(transcription.text)
