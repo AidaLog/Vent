@@ -24,29 +24,47 @@ if "audio_buffer" not in st.session_state:
 if "recording" not in st.session_state:
     st.session_state.recording = False
 
+
+
 # Left column: Recording functionality
 with col1:
     st.subheader("Record Your Explanation")
     
+    # Get a list of available input devices
+    device_list = [
+        dev['name'] for dev in sd.query_devices() if dev['max_input_channels'] > 0
+    ]
+    selected_device = st.selectbox('Select Input Device', device_list)
+
     if st.session_state.recording:
         st.write("Recording in progress...")
     
-    duration = st.number_input("Recording Duration (seconds):", min_value=1, max_value=600, value=10)
+    duration = st.number_input("Recording Duration (seconds):", min_value=1, max_value=600, value=600)
 
-    if st.button("Start Recording"):
-        st.session_state.recording = True
-        st.write("Recording...")
-        fs = 44100  # Sampling frequency
-        # try:
-        audio_data = sd.rec(int(duration * fs), samplerate=fs, channels=2, dtype='int16')
-        sd.wait()  # Wait for recording to complete
-        st.session_state.audio_buffer = BytesIO()
-        sf.write(st.session_state.audio_buffer, audio_data, fs, format='WAV')
-        st.session_state.audio_buffer.seek(0)
-        st.session_state.recording = False
-        st.success("Recording completed.")
-        # except Exception as e:
-        #     st.error(f"An error occurred while recording: {e}")
+    col_start, col_stop = st.columns(2)
+    with col_start:
+        if st.button("Start Recording"):
+            st.session_state.recording = True
+            fs = 44100
+            st.session_state.audio_data = sd.rec(
+                int(duration * fs),
+                samplerate=fs,
+                channels=2,
+                dtype='int16',
+                device=device_list.index(selected_device)
+            )
+            st.write("Recording started...")
+
+    with col_stop:
+        if st.button("Stop Recording"):
+            sd.stop()
+            sd.wait()
+            fs = 44100
+            st.session_state.audio_buffer = BytesIO()
+            sf.write(st.session_state.audio_buffer, st.session_state.audio_data, fs, format='WAV')
+            st.session_state.audio_buffer.seek(0)
+            st.session_state.recording = False
+            st.success("Recording completed.")
 
 # Right column: Playback functionality
 with col2:
