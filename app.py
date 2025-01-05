@@ -18,8 +18,15 @@ load_dotenv()
 st.set_page_config(page_title="Vent", layout="wide")
 
 # Sidebar
+venting_prompt = "This recording is a snippet of a project explanation that will be used to write project documentation."
 st.sidebar.title("Vent")
 st.sidebar.write("Record and playback your project explanations.")
+
+st.sidebar.subheader("Venting Purpose")
+model_prompt = st.sidebar.text_area(
+    "What happened?",
+    venting_prompt
+)
 
 # Main page
 st.title("Vent")
@@ -115,7 +122,7 @@ with col2:
                 transcription = client.audio.transcriptions.create(
                     file=(temp_filename, file.read()),
                     model="whisper-large-v3",
-                    prompt="This recording is a snippet of a project explanation that will be used to write project documentation.",
+                    prompt=model_prompt,
                     response_format="verbose_json",
                 )
             st.code(transcription.text, language='text')
@@ -133,4 +140,4 @@ with col2:
             st.session_state.audio_data = None
         except Exception as e:
             st.write(f"Error transcribing audio: {e}")
-        
+
