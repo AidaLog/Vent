@@ -6,6 +6,10 @@ import time
 import os
 from groq import Groq
 from dotenv import load_dotenv
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # Load environment variables
 load_dotenv()
@@ -120,7 +124,7 @@ with col2:
             try:
                 os.remove(temp_filename)
             except OSError as e:
-                st.error(f"Error: {e.strerror}")
+                logger.error(f"Error: {e.strerror}")
             
             st.session_state.audio_buffer.seek(0)
             st.session_state.recording = False
@@ -130,5 +134,3 @@ with col2:
         except Exception as e:
             st.write(f"Error transcribing audio: {e}")
         
-        # Clean up temporary file
-        os.remove(temp_filename)
