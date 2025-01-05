@@ -3,6 +3,12 @@ import sounddevice as sd
 import soundfile as sf
 from io import BytesIO
 import time
+import os
+from groq import Groq
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # App configuration
 st.set_page_config(page_title="Vent", layout="wide")
@@ -14,6 +20,12 @@ st.sidebar.write("Record and playback your project explanations.")
 # Main page
 st.title("Vent")
 st.write("Easily record yourself explaining your projects and play them back.")
+
+# Groq client
+client = Groq(
+    api_key=os.getenv("GROQ_API_KEY"),
+)
+
 
 # Layout
 col1, col2 = st.columns(2)
@@ -82,3 +94,28 @@ with col2:
         st.audio(st.session_state.audio_buffer, format="audio/wav")
     else:
         st.write("No recording available to play back.")
+
+    # Section for Transcription
+    st.subheader("Transcription of Your Explanation")
+    
+    # Save the audio buffer to a temporary file for transcription
+    if st.session_state.audio_buffer is not None:
+        temp_filename = "audio.wav"
+        with open(temp_filename, "wb") as temp_file:
+            temp_file.write(st.session_state.audio_buffer.read())
+
+        # Transcription using Groq Whisper model
+        try:
+            
+            with open(temp_filename, "rb") as file:
+                transcription = client.audio.transcriptions.create(
+                    file=(temp_filename, file.read()),
+                    model="whisper-large-v3",
+                    response_format="verbose_json",
+                )
+            st.write(transcription.text)
+        except Exception as e:
+            st.write(f"Error transcribing audio: {e}")
+        
+        # Clean up temporary file
+        os.remove(temp_filename)
