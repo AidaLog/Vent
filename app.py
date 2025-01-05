@@ -2,6 +2,7 @@ import streamlit as st
 import sounddevice as sd
 import soundfile as sf
 from io import BytesIO
+import time
 
 # App configuration
 st.set_page_config(page_title="Vent", layout="wide")
@@ -24,7 +25,11 @@ if "audio_buffer" not in st.session_state:
 if "recording" not in st.session_state:
     st.session_state.recording = False
 
+if "start_time" not in st.session_state:
+    st.session_state.start_time = 0
 
+if "stop_time" not in st.session_state:
+    st.session_state.stop_time = 0
 
 # Left column: Recording functionality
 with col1:
@@ -37,17 +42,18 @@ with col1:
     selected_device = st.selectbox('Select Input Device', device_list)
 
     if st.session_state.recording:
-        st.write("Recording in progress...")
+        elapsed_time = time.time() - st.session_state.start_time
+        st.write(f"Recording in progress... {elapsed_time:.2f} s")
     
-    duration = st.number_input("Recording Duration (seconds):", min_value=1, max_value=600, value=600)
-
     col_start, col_stop = st.columns(2)
     with col_start:
         if st.button("Start Recording"):
             st.session_state.recording = True
+            st.session_state.start_time = time.time()
+            st.session_state.stop_time = 0  # Reset stop time
             fs = 44100
             st.session_state.audio_data = sd.rec(
-                int(duration * fs),
+                int(600 * fs),  # Just an initial buffer, will adjust on stop
                 samplerate=fs,
                 channels=2,
                 dtype='int16',
@@ -57,11 +63,13 @@ with col1:
 
     with col_stop:
         if st.button("Stop Recording"):
+            st.session_state.stop_time = time.time()
             sd.stop()
             sd.wait()
             fs = 44100
+            duration = int((st.session_state.stop_time - st.session_state.start_time) * fs)
             st.session_state.audio_buffer = BytesIO()
-            sf.write(st.session_state.audio_buffer, st.session_state.audio_data, fs, format='WAV')
+            sf.write(st.session_state.audio_buffer, st.session_state.audio_data[:duration], fs, format='WAV')
             st.session_state.audio_buffer.seek(0)
             st.session_state.recording = False
             st.success("Recording completed.")
