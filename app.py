@@ -116,17 +116,17 @@ with col2:
                 )
             st.code(transcription.text, language='text')
             
-            # Clear the audio buffer
-            st.session_state.audio_buffer = None
-            # Reset the temporary file pointer
-            st.session_state.audio_buffer.seek(0)
-            # Reset the recording state
-            st.session_state.recording = False
             # Delete the temporary file
             try:
                 os.remove(temp_filename)
             except OSError as e:
                 st.error(f"Error: {e.strerror}")
+            
+            st.session_state.audio_buffer.seek(0)
+            st.session_state.recording = False
+            st.session_state.stop_time = 0
+            st.session_state.start_time = 0
+            st.session_state.audio_data = None
         except Exception as e:
             st.write(f"Error transcribing audio: {e}")
         
