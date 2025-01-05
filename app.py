@@ -96,7 +96,8 @@ with col2:
         st.write("No recording available to play back.")
 
     # Section for Transcription
-    st.subheader("Transcription of Your Explanation")
+    st.divider()
+    st.write("Transcription of Your Explanation")
     
     # Save the audio buffer to a temporary file for transcription
     if st.session_state.audio_buffer is not None:
@@ -106,7 +107,6 @@ with col2:
 
         # Transcription using Groq Whisper model
         try:
-            
             with open(temp_filename, "rb") as file:
                 transcription = client.audio.transcriptions.create(
                     file=(temp_filename, file.read()),
@@ -114,7 +114,19 @@ with col2:
                     prompt="This recording is a snippet of a project explanation that will be used to write project documentation.",
                     response_format="verbose_json",
                 )
-            st.write(transcription.text)
+            st.code(transcription.text, language='text')
+            
+            # Clear the audio buffer
+            st.session_state.audio_buffer = None
+            # Reset the temporary file pointer
+            st.session_state.audio_buffer.seek(0)
+            # Reset the recording state
+            st.session_state.recording = False
+            # Delete the temporary file
+            try:
+                os.remove(temp_filename)
+            except OSError as e:
+                st.error(f"Error: {e.strerror}")
         except Exception as e:
             st.write(f"Error transcribing audio: {e}")
         
